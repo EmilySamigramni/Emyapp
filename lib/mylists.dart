@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert'; // For encoding/decoding JSON data
-
 
 class MyListsPage extends StatefulWidget {
   const MyListsPage({super.key});
@@ -11,83 +8,58 @@ class MyListsPage extends StatefulWidget {
 }
 
 class _MyListsPageState extends State<MyListsPage> {
-  List<Map<String, dynamic>> _lists = []; // Store heading and its items
+  List<Map<String, dynamic>> _headings = [];
   final TextEditingController _headingController = TextEditingController();
   final TextEditingController _itemController = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    _loadLists(); // Load stored lists when the page is initialized
-  }
-
-  Future<void> _loadLists() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? storedLists = prefs.getString('myLists');
-    if (storedLists != null) {
+  void _addHeading() {
+    final headingText = _headingController.text.trim();
+    if (headingText.isNotEmpty) {
       setState(() {
-        _lists = List<Map<String, dynamic>>.from(json.decode(storedLists));
+        _headings.add({'heading': headingText, 'items': <String>[]});
+        _headingController.clear();
       });
     }
   }
 
-  Future<void> _saveLists() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('myLists', json.encode(_lists));
+  void _addItems(int headingIndex) {
+    final itemText = _itemController.text.trim();
+    if (itemText.isNotEmpty) {
+      setState(() {
+        _headings[headingIndex]['items'].add(itemText);
+        _itemController.clear();
+      });
+    }
   }
 
-  void _addNewList() {
+  void _editHeading(int index) {
+    final heading = _headings[index];
+    final TextEditingController editHeadingController = TextEditingController(text: heading['heading']);
+    
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         return AlertDialog(
-          title: const Text('Add New List'),
-          content: TextField(
-            controller: _headingController,
-            decoration: const InputDecoration(hintText: 'Enter list heading'),
+          title: const Text('Edit Heading'),
+          content: TextFormField(
+            controller: editHeadingController,
+            decoration: const InputDecoration(labelText: 'Heading'),
+            autofocus: true,
           ),
-          actions: <Widget>[
+          actions: [
             TextButton(
-              child: const Text('Add'),
+              child: const Text('Cancel'),
               onPressed: () {
-                setState(() {
-                  _lists.add({
-                    'heading': _headingController.text,
-                    'items': []
-                  }); // Add new list with empty items
-                });
-                _headingController.clear();
-                _saveLists(); // Save the new list
-                Navigator.of(context).pop();
+                Navigator.pop(context);
               },
             ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _editList(int index) {
-    _headingController.text = _lists[index]['heading'];
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Edit List'),
-          content: TextField(
-            controller: _headingController,
-            decoration: const InputDecoration(hintText: 'Edit list heading'),
-          ),
-          actions: <Widget>[
             TextButton(
               child: const Text('Save'),
               onPressed: () {
                 setState(() {
-                  _lists[index]['heading'] = _headingController.text;
+                  _headings[index]['heading'] = editHeadingController.text.trim();
                 });
-                _headingController.clear();
-                _saveLists(); // Save changes
-                Navigator.of(context).pop();
+                Navigator.pop(context);
               },
             ),
           ],
@@ -96,62 +68,34 @@ class _MyListsPageState extends State<MyListsPage> {
     );
   }
 
-  void _deleteList(int index) {
-    setState(() {
-      _lists.removeAt(index);
-    });
-    _saveLists(); // Save changes
-  }
+  void _editItem(int headingIndex, int itemIndex) {
+    final item = _headings[headingIndex]['items'][itemIndex];
+    final TextEditingController editItemController = TextEditingController(text: item);
 
-  void _addNewItem(int listIndex) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add New Item'),
-          content: TextField(
-            controller: _itemController,
-            decoration: const InputDecoration(hintText: 'Enter item'),
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Add'),
-              onPressed: () {
-                setState(() {
-                  _lists[listIndex]['items'].add(_itemController.text);
-                });
-                _itemController.clear();
-                _saveLists(); // Save changes
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _editItem(int listIndex, int itemIndex) {
-    _itemController.text = _lists[listIndex]['items'][itemIndex];
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
+      builder: (context) {
         return AlertDialog(
           title: const Text('Edit Item'),
-          content: TextField(
-            controller: _itemController,
-            decoration: const InputDecoration(hintText: 'Edit item'),
+          content: TextFormField(
+            controller: editItemController,
+            decoration: const InputDecoration(labelText: 'Item'),
+            autofocus: true,
           ),
-          actions: <Widget>[
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+            ),
             TextButton(
               child: const Text('Save'),
               onPressed: () {
                 setState(() {
-                  _lists[listIndex]['items'][itemIndex] = _itemController.text;
+                  _headings[headingIndex]['items'][itemIndex] = editItemController.text.trim();
                 });
-                _itemController.clear();
-                _saveLists(); // Save changes
-                Navigator.of(context).pop();
+                Navigator.pop(context);
               },
             ),
           ],
@@ -160,11 +104,19 @@ class _MyListsPageState extends State<MyListsPage> {
     );
   }
 
-  void _deleteItem(int listIndex, int itemIndex) {
+  void _deleteItem(int headingIndex, int itemIndex) {
     setState(() {
-      _lists[listIndex]['items'].removeAt(itemIndex);
+      _headings[headingIndex]['items'].removeAt(itemIndex);
+      if (_headings[headingIndex]['items'].isEmpty) {
+        _headings.removeAt(headingIndex);
+      }
     });
-    _saveLists(); // Save changes
+  }
+
+  void _deleteHeading(int index) {
+    setState(() {
+      _headings.removeAt(index);
+    });
   }
 
   @override
@@ -172,59 +124,115 @@ class _MyListsPageState extends State<MyListsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Lists'),
+        backgroundColor: Colors.pink[300],
       ),
-      body: ListView.builder(
-        itemCount: _lists.length,
-        itemBuilder: (context, listIndex) {
-          return ExpansionTile(
-            title: Text(
-              _lists[listIndex]['heading'],
-              style: const TextStyle(
-                fontWeight: FontWeight.bold, // Makes the heading bold
+      backgroundColor: Colors.pink[50],
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextFormField(
+              controller: _headingController,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Add Heading',
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: _addHeading,
+                ),
+              ),
+              autofocus: true,
+            ),
+            const SizedBox(height: 16.0),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _headings.length,
+                itemBuilder: (context, headingIndex) {
+                  final heading = _headings[headingIndex];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    elevation: 5,
+                    child: ExpansionTile(
+                      tilePadding: const EdgeInsets.all(16.0),
+                      title: Text(
+                        heading['heading'],
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () {
+                              _editHeading(headingIndex);
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () {
+                              _deleteHeading(headingIndex);
+                            },
+                          ),
+                        ],
+                      ),
+                      children: [
+                        ...List.generate(
+                          (heading['items'] as List<String>).length,
+                          (itemIndex) {
+                            final item = (heading['items'] as List<String>)[itemIndex];
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                              title: Text(item),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.edit),
+                                    onPressed: () {
+                                      _editItem(headingIndex, itemIndex);
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete),
+                                    onPressed: () {
+                                      _deleteItem(headingIndex, itemIndex);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _itemController,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    prefixIcon: Icon(Icons.favorite, color: Colors.pink),
+                                    suffixIcon: IconButton(
+                                      icon: const Icon(Icons.add),
+                                      onPressed: () => _addItems(headingIndex),
+                                    ),
+                                  ),
+                                  autofocus: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () => _editList(listIndex),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () => _deleteList(listIndex),
-                ),
-              ],
-            ),
-            children: <Widget>[
-              for (int i = 0; i < _lists[listIndex]['items'].length; i++)
-                ListTile(
-                  title: Text(_lists[listIndex]['items'][i]),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () => _editItem(listIndex, i),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () => _deleteItem(listIndex, i),
-                      ),
-                    ],
-                  ),
-                ),
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: () => _addNewItem(listIndex),
-              ),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addNewList,
-        child: const Icon(Icons.add),
+          ],
+        ),
       ),
     );
   }

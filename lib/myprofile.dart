@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'mycalendar.dart'; // Make sure this file exists and contains MyCalendarPage
-import 'mylists.dart'; // Make sure this file exists and contains MyListsPage
-import 'puzzle.dart'; // Make sure this file exists and contains PuzzlePage
+import 'mycalendar.dart'; // Ensure these files exist and contain the correct classes
+import 'mylists.dart';
+import 'puzzle.dart';
+import 'forever.dart';
 
 class MyProfilePage extends StatelessWidget {
   const MyProfilePage({super.key});
@@ -11,6 +12,7 @@ class MyProfilePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Profile'),
+        backgroundColor: Colors.pink, // Ensure the AppBar background is pink
         leading: Builder(
           builder: (context) => IconButton(
             icon: const Icon(Icons.menu),
@@ -19,27 +21,30 @@ class MyProfilePage extends StatelessWidget {
         ),
       ),
       drawer: const NavigationDrawer(),
-      body: const Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: <Widget>[
-              Text(
-                'My Profile',
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.pink,
+      body: Container(
+        color: Colors.pink[50], // Light pink background for the body
+        child: const Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Text(
+                  'My Profile',
+                  style: TextStyle(
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.pink, // Title color
+                  ),
                 ),
-              ),
-              SizedBox(height: 20),
-              _ProfileDetail(title: 'Name:', detail: 'Emily Samigramni', color: Colors.pink),
-              _ProfileDetail(title: 'Birthday:', detail: '25 March 2004'),
-              _ProfileDetail(title: 'ID Number:', detail: '0403250105083'),
-              _ProfileDetail(title: 'Favourite Colour:', detail: 'Red'),
-              _ProfileDetail(title: 'Favourite Number:', detail: '5'),
-            ],
+                SizedBox(height: 20),
+                _ProfileDetail(title: 'Name:', detail: 'Emily Samigramni', color: Colors.pink),
+                _ProfileDetail(title: 'Birthday:', detail: '25 March 2004'),
+                _ProfileDetail(title: 'ID Number:', detail: '0403250105083'),
+                _ProfileDetail(title: 'Favourite Colour:', detail: 'Red'),
+                _ProfileDetail(title: 'Favourite Number:', detail: '5'),
+              ],
+            ),
           ),
         ),
       ),
@@ -54,20 +59,20 @@ class NavigationDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Drawer(
       child: Container(
-        color: Colors.pink, // Full pink background
+        color: Colors.pink, // Pink background for drawer
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
             DrawerHeader(
               decoration: const BoxDecoration(
-                color: Colors.pink, // Full pink background for header
+                color: Colors.pink, // Pink background for header
               ),
               child: Text(
                 'Menu',
                 style: TextStyle(
-                  fontSize: 24, // Smaller menu title font size
+                  fontSize: 24, // Font size for menu title
                   fontWeight: FontWeight.bold,
-                  color: Colors.pink[50], // Lighter pink text
+                  color: Colors.pink[50], // Lighter pink for header text
                 ),
               ),
             ),
@@ -104,6 +109,15 @@ class NavigationDrawer extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const PuzzlePage()),
+                );
+              },
+            ),
+            ListTile(
+              title: Text('Forever And Always', style: TextStyle(color: Colors.pink[50])),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ForeverPage()),
                 );
               },
             ),
